@@ -13,14 +13,18 @@ program fsh;
 {$mode ObjFPC} {$H+}
 
 uses
+{$ifdef FPOS}
     // system units - we have no reason to not include them
     console, rtc, strutils, types,
+{$endif}
     credits;
 
-(* Some system commands *)
+(* Internal commands *)
+
+{$ifdef FPOS}
 
 { Restarts the operating system. }
-procedure Restart;
+procedure Restart(var argc: integer; argv: array of string);
 begin
     asm
         mov al, $FE
@@ -29,7 +33,7 @@ begin
 end;
 
 { Halts the OS }
-procedure OSHalt;
+procedure OSHalt(var argc: integer; argv: array of string);
 begin
     ClearScreen;
     SetTextColor(scBlack, scLightGreen);
@@ -40,14 +44,28 @@ begin
     end;
 end;
 
+{$endif}
+
+{$ifdef FPOS}
+procedure ClearScreen(var argc: integer; argv: array of string);
+begin
+    ClearScreen;
+end;
+{$else}
+procedure ClearScreen(var argc: integer; argv: array of string);
+begin
+    WriteLn('Not implemented.');
+end;
+{$endif}
+
 { Dumps registerations - not implemented for 64bit }
 {$ifdef CPU64}
-procedure DumpRegs;
+procedure DumpRegs(var argc: integer; argv: array of string);
 begin
     WriteLn('Sorry, this is not implemented yet.');
 end;
 {$else}
-procedure DumpRegs;
+procedure DumpRegs(var argc: integer; argv: array of string);
 
 label
     GetEIP;
@@ -106,7 +124,7 @@ end;
 {$endif}
 
 { Shows the current date }
-procedure ShowDate;
+procedure ShowDate(var argc: integer; argv: array of string);
 const
     Days: array [1..7] of String = (
         'Sunday', 'Monday', 'Tuesday', 'Wednesday',
@@ -119,7 +137,8 @@ const
     );
 
 var
-  s: String;
+    s: String;
+
 begin
     with GetTime do begin
         Str(DayOfMonth,s);
@@ -145,7 +164,7 @@ type
         Name: String;
         Alias: String = '';
         Description: String;
-        Proc: procedure (var argc: Integer, argv: array of String);
+        Proc: procedure (var argc: Integer; argv: array of String);
     end;
 
     TCommandsHistory = record
@@ -159,9 +178,7 @@ var
 const
     MaxCmdLen = 8; // TBD, probably I need to research much more about OSes
     ShellCommands: array [1..9] of TCommands = (
-        (Name: 'clear'; Alias: 'cls'; Description: 'Clears the screen')
-        // I'm going to school now:-)
-        // Will finish this tonight (UTC+7)
+        (Name: 'clear'; Alias: 'cls'; Description: 'Clears the screen'; Proc: ClearScreen)
     );
 
 begin

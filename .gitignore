@@ -1,0 +1,11 @@
+*.lpi
+*.o
+*.ppu
+*.a
+fsh*
+!src/fsh.lpr
+!data/fsh*.1
+source/
+FPCSource/
+fpcmade*
+units*

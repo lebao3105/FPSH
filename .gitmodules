@@ -1,0 +1,3 @@
+[submodule "subprojects/libpasyaml"]
+	path = subprojects/libpasyaml
+	url = https://github.com/isemenkov/libpasyaml

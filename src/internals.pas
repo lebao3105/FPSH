@@ -27,10 +27,6 @@ uses
     winutils,
     {$endif WINDOWS}
 
-    {$ifdef FPOS}
-    console, rtc,
-    {$endif FPOS}
-
     dos, // GetDate
     strutils, sysutils;
 
@@ -43,7 +39,6 @@ procedure OSHalt(const argc: integer; argv: array of string); { Halts the OS. }
 
 {$endif FPOS}
 
-procedure ClearMyConsole(const argc: integer; argv: array of string); { Clears the console. }
 procedure DumpRegs(const argc: integer; argv: array of string); { Dumps registry contents }
 procedure ShowDate(const argc: integer; argv: array of string); { Shows the current date. }
 procedure Help(const argc: integer; argv: array of string); { Shows the help message. }
@@ -53,6 +48,8 @@ procedure PopDir(const argc: integer; argv: array of string); { Same as PushDir,
 procedure Quit(const argc: integer; argv: array of string); { Quits the current script/FPSH }
 
 { Internal shell functions }
+
+function AmIRoot: boolean;
 
 { Internal variables, types and constants }
 
@@ -75,9 +72,8 @@ var
     PS1: string;
 
 const
-    ShellCommands: array [1..{$ifdef FPOS}10{$else}8{$endif}] of TFSHCommands = (
+    ShellCommands: array [1..{$ifdef FPOS}9{$else}7{$endif}] of TFSHCommands = (
         (Name: 'cd'; Alias: ''; Description: 'Change working directory'; Proc: @SwitchDir),
-        (Name: 'clear'; Alias: 'cls'; Description: 'Clears the screen'; Proc: @ClearMyConsole),
         (Name: 'date'; Alias: ''; Description: 'Get the current date'; Proc: @ShowDate),
         (Name: 'exit'; Alias: ''; Description: 'Quits the script/FPSH'; Proc: @Quit),
         (Name: 'help'; Alias: ''; Description: 'Show this and exit'; Proc: @Help),
@@ -90,14 +86,24 @@ const
         {$endif}
     );
 
-    AmIRoot: boolean = true;
-        // = {$ifdef UNIX} (fpgeteuid() = 0) {$endif}
-        //   {$ifdef WINDOWS} isWindowsAdmin() {$endif}
-        //   {$ifdef FPOS} true {$endif} // TBC
-        // ;
     Line_BUFSIZE = 1024;
 
 implementation
+
+function AmIRoot: boolean;
+begin
+    {$ifdef UNIX}
+    Result := (fpgeteuid = 0);
+    {$endif}
+
+    {$ifdef WINDOWS}
+    Result := isWindowsAdmin;
+    {$endif}
+
+    {$ifdef FPOS}
+    Result := true;
+    {$endif}
+end;
 
 {$ifdef FPOS}
 
@@ -111,7 +117,6 @@ end;
 
 procedure OSHalt(const argc: integer; argv: array of string);
 begin
-    ClearMyConsole(argc, argv);
     SetTextColor(scBlack, scLightGreen);
     WriteLn('OS halted itself. It''s now safe to turn off your computer/emulator.');
     asm
@@ -121,14 +126,6 @@ begin
 end;
 
 {$endif}
-
-procedure ClearMyConsole(const argc: integer; argv: array of string);
-begin
-    {$ifdef FPOS}
-    ClearScreen;
-    {$endif}
-    // not implemented on other platforms
-end;
 
 procedure DumpRegs(const argc: integer; argv: array of string); { Dumps registry contents }
 {$ifdef CPUI386}
@@ -250,18 +247,10 @@ end;
 
 procedure SwitchDir(const argc: integer; argv: array of string);
 begin
-    if argv[0] = '' then
-        WriteLn('An argument is required.')
-    else if strutils.StartsStr('.', argv[0]) then
-    begin
-        Writeln('got there');
-        ChDir(GetCurrentDir + '/..');
-    end
+    if argv[1] = '' then
+        writeln('An argument is required.')
     else
-    begin
-        writeln('got here too');
-        ChDir(argv[0]);
-    end;
+        ChDir(argv[1]);
     if IOresult <> 0 then
         WriteLn('Unable to change to ' + argv[1] + ' directory');
 end;
@@ -276,13 +265,11 @@ begin
 
 end;
 
-
 procedure Quit(const argc: integer; argv: array of string);
+var code: longint = 0;
 begin
-    if argv[0] <> '' then
-        halt(StrToInt(argv[0]))
-    else
-        halt(0);
+    TryStrToInt(argv[1], code);
+    halt(code);
 end;
 
 end.

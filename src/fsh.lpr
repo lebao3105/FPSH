@@ -26,9 +26,9 @@ function IsShellCommand(const cmd: string; var idx: byte): boolean;
             Exit;
         end;
         mid := (l + r) div 2;
-        if Cmd < ShellCommands[mid].Name then
+        if (CompareStr(Cmd, ShellCommands[mid].Name) < 0) or (CompareStr(Cmd, ShellCommands[mid].Alias) < 0) then
             SearchCommand := SearchCommand(l, mid - 1)
-        else if Cmd > ShellCommands[mid].Name then
+        else if (CompareStr(Cmd, ShellCommands[mid].Name) > 0) or (CompareStr(Cmd, ShellCommands[mid].Alias) > 0) then
             SearchCommand := SearchCommand(mid + 1, r)
         else begin
             SearchCommand := True;
@@ -46,6 +46,7 @@ var
     i: byte;
     cmd: string;
     args: array of string;
+    args_string: string;
     search: string;
 
 begin
@@ -54,14 +55,23 @@ begin
     if IsShellCommand(lowerCase(cmd), i) then
         ShellCommands[i].Proc(High(args) - Low(args) + 1, args)
     else begin
-        search := ExeSearch(lowerCase(cmd), GetEnvironmentVariable('PATH'));
-        writeln(search);
-        if search <> '' then begin
-            Status := ExecuteProcess(search, sysutils.StringReplace(line, cmd + ' ', '', []));
+        args_string := StringReplace(line, cmd + ' ', '', []);
+        
+        // StringReplace on fail returns the original string
+        if args_string = cmd then
+            args_string := '';
+
+        if not FileExists(cmd) then begin
+            search := ExeSearch(lowerCase(cmd), GetEnvironmentVariable('PATH'));
+            if search <> '' then begin
+                Status := ExecuteProcess(search, args_string);
+            end
+            else
+                WriteLn('''' + cmd + ''' is not recognized as an internal command ' +
+                        'or external command, operable program or batch file.');
         end
         else
-            WriteLn('''' + cmd + ''' is not recognized as an internal command ' +
-                    'or external command, operable program or batch file.');
+            Status := ExecuteProcess(cmd, args_string);
     end;
 end;
 
@@ -75,10 +85,10 @@ begin
     else
         dollarOrNot := '$';
 
-    PS1 := sysutils.GetCurrentDir + ' []';
+    PS1 := GetCurrentDir + ' ' + dollarOrNot;
     while true do begin
-        Write(PS1 + '> ');
-        ReadLn(input); // you may think about making your own one...
+        Write(PS1 + ' ');
+        ReadLn(input);
         ProcessLine(input);
     end;
 end.

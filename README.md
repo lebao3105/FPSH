@@ -10,8 +10,12 @@ This has basic things of a shell:
 
 * Has internal commands
 
-* [Attemping] Switching between directories (I'm testing FPC API)
+* [Attemping] Switching between directories
 
-* ...
+* Command history
 
 This shell is mainly made for FPOS (Free Pascal Operating System) but also available for other OSes to use.
+
+## Build
+
+Just use make

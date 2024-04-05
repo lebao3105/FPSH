@@ -1,0 +1,47 @@
+.\" Manpage for fsh program
+.\" (C) 2024 Le Bao Nguyen.
+
+.TH man 1
+
+.SH NAME
+fsh/FPSH - the Free Pascal Shell
+
+.SH SYNOSIS
+fsh [flags] [value/commands]
+
+.SH DESCRIPTION
+fsh is a shell entirely written in Objective Pascal. It has does many things that other shells can, but except an own scripting language. This shell is customizable with ~/.fshrc in YAML format.
+
+On some commands like cd, they use Pascal's IOResult code for input/output calls:
+
+Dos errors:
+
+* 2: File not found
+
+* 3: Path not found
+
+* 4: Too many open files
+
+* 5: Access denied
+
+* 6: Invalid file handle
+
+* 12: Invalid file-access mode
+
+* 15: Invalid disk number
+
+* 16: Cannot remove current directory
+
+* 17: Cannot rename across volumes
+
+.SH OPTIONS
+Currently no options available, but soon via command-line flags and ~/.fshrc.
+
+.SH BUGS
+No known bugs.
+
+.SH SEE ALSO
+fsh-cd(1)
+
+.SH AUTHOR
+Le Bao Nguyen

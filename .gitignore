@@ -2,9 +2,10 @@
 *.o
 *.ppu
 *.a
+*.res
 fsh*
 !src/fsh.lpr
-!data/fsh*.1
+!data/fsh*
 source/
 FPCSource/
 fpcmade*

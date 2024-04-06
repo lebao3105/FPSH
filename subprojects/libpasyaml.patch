@@ -1,0 +1,14 @@
+diff --git a/source/libpasyaml.pas b/source/libpasyaml.pas
+index 9c3264a..0c5f248 100644
+--- a/source/libpasyaml.pas
++++ b/source/libpasyaml.pas
+@@ -873,6 +873,9 @@ type
+ {$IFDEF LINUX}
+   const libYaml = 'libyaml.so';
+ {$ENDIF}
++{$IFDEF DARWIN}
++  const libYaml = 'libyaml.dylib';
++{$ENDIF}
+ 
+ { Get the library version as a string.
+ 

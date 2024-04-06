@@ -1,0 +1,21 @@
+.\" Manpage for return codes in FSH
+
+.TH man 1
+
+.SH NAME
+
+Free Pascal Shell internal commands return codes
+
+.SH DESCRIPTION
+
+Internal commands that are made for FSH are mostly use Free Pascal's RTL (Run Time Library).
+
+And they also have their return code for (almost) each specific actions they have done.
+
+On some commands like cd, they use sysutils's IOResult code for input/output calls.
+
+.SH RETURN VALUE
+
+* Zero on success - of course,
+
+* Non-zero, would be an error occured.

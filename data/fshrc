@@ -1,0 +1,14 @@
+settings:
+	description: Example FPSH settings
+
+	prompt-strings:
+		# Prompt strings will have a space at the end by the shell itself
+		ps1-format: "[%(user)s] ~ [%(currdir)s] - [%(code)s] %(type)s"
+		ps2: "..."
+		# Actually these are default values
+		type-normal: "$"
+		type-root: "#"
+		# Strings format
+		currdir-name-only: 1 # The current directory on show only show its name, not full path
+		time-format: "dd/mm/yy hh/nn/ss" # Read www.freepascal.org/docs-html/rtl/sysutils/formatchars.html
+

@@ -13,7 +13,7 @@ program fsh;
 {$mode ObjFPC} {$H+}
 
 uses
-    strutils, internals, sysutils;
+    strutils, internals, sysutils, promptstrings, process, crt;
 
 function IsShellCommand(const cmd: string; var idx: byte): boolean;
     function SearchCommand(l, r: Byte): Boolean;
@@ -26,9 +26,13 @@ function IsShellCommand(const cmd: string; var idx: byte): boolean;
             Exit;
         end;
         mid := (l + r) div 2;
-        if (CompareStr(Cmd, ShellCommands[mid].Name) < 0) or (CompareStr(Cmd, ShellCommands[mid].Alias) < 0) then
+        if (Cmd = ShellCommands[mid].Alias) then begin
+            SearchCommand := True;
+            idx := mid;
+        end;
+        if (Cmd < ShellCommands[mid].Name) then
             SearchCommand := SearchCommand(l, mid - 1)
-        else if (CompareStr(Cmd, ShellCommands[mid].Name) > 0) or (CompareStr(Cmd, ShellCommands[mid].Alias) > 0) then
+        else if (Cmd > ShellCommands[mid].Name) then
             SearchCommand := SearchCommand(mid + 1, r)
         else begin
             SearchCommand := True;
@@ -40,6 +44,23 @@ begin
     IsShellCommand := SearchCommand(Low(ShellCommands), High(ShellCommands));
 end;
 
+function RunProg(const cmd: string; argv: array of string): integer;
+var aprocess: TProcess; i: integer;
+begin
+    aprocess := TProcess.Create(nil);
+    aprocess.Executable := cmd;
+    for i := Low(argv) to High(argv) do
+    begin
+        // writeln(argv[i]);
+        aprocess.Parameters.Add(argv[i]);
+    end;
+    aprocess.Options := aprocess.Options + [poWaitOnExit];
+    // writeln(CurrDir);
+    aprocess.CurrentDirectory := GetCurrentDir;
+    aprocess.Execute;
+    aprocess.Free;
+    Result := aprocess.ExitCode;
+end;
 
 procedure ProcessLine(const line: string);
 var
@@ -52,42 +73,34 @@ var
 begin
     args := strutils.SplitString(line, ' ');
     cmd := args[0];
+
     if IsShellCommand(lowerCase(cmd), i) then
-        ShellCommands[i].Proc(High(args) - Low(args) + 1, args)
+        Status := ShellCommands[i].Proc(High(args) - Low(args) + 1, args)
     else begin
         args_string := StringReplace(line, cmd + ' ', '', []);
-        
-        // StringReplace on fail returns the original string
-        if args_string = cmd then
-            args_string := '';
+
+        if args_string = cmd then args_string := '';
 
         if not FileExists(cmd) then begin
             search := ExeSearch(lowerCase(cmd), GetEnvironmentVariable('PATH'));
             if search <> '' then begin
-                Status := ExecuteProcess(search, args_string);
+                Status := RunProg(cmd, SplitString(args_string, ' '));
             end
             else
                 WriteLn('''' + cmd + ''' is not recognized as an internal command ' +
-                        'or external command, operable program or batch file.');
+                        'or external command, operable program or batch file, a function or a variable.');
         end
         else
-            Status := ExecuteProcess(cmd, args_string);
+            Status := RunProg(cmd, SplitString(args_string, ' '));
     end;
 end;
 
 var
     input: string;
-    dollarOrNot: string;
 
 begin
-    if AmIRoot then
-        dollarOrNot := '#'
-    else
-        dollarOrNot := '$';
-
-    PS1 := GetCurrentDir + ' ' + dollarOrNot;
     while true do begin
-        Write(PS1 + ' ');
+        Write(PSOne + ' ');
         ReadLn(input);
         ProcessLine(input);
     end;

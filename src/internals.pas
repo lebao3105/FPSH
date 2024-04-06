@@ -14,7 +14,7 @@
 unit internals;
 
 {$mode ObjFPC} {$H+}
-// {$I-} // disable raising errors on IOResult != 0
+{$I-} // disable raising errors on IOResult != 0
 
 interface
 
@@ -26,7 +26,7 @@ uses
     {$ifdef WINDOWS}
     winutils,
     {$endif WINDOWS}
-
+    custapp, // TCustomApplication
     dos, // GetDate
     strutils, sysutils;
 
@@ -34,18 +34,18 @@ uses
 
 {$ifdef FPOS}
 
-procedure Restart(const argc: integer; argv: array of string); { Restarts the OS. }
-procedure OSHalt(const argc: integer; argv: array of string); { Halts the OS. }
+function Restart(const argc: integer; argv: array of string): integer; { Restarts the OS. }
+function OSHalt(const argc: integer; argv: array of string): integer; { Halts the OS. }
 
 {$endif FPOS}
 
-procedure DumpRegs(const argc: integer; argv: array of string); { Dumps registry contents }
-procedure ShowDate(const argc: integer; argv: array of string); { Shows the current date. }
-procedure Help(const argc: integer; argv: array of string); { Shows the help message. }
-procedure SwitchDir(const argc: integer; argv: array of string); { Changes the current working directory. }
-procedure PushDir(const argc: integer; argv: array of string); { Push a directory to the top of directories stack. }
-procedure PopDir(const argc: integer; argv: array of string); { Same as PushDir, but do the opposite }
-procedure Quit(const argc: integer; argv: array of string); { Quits the current script/FPSH }
+function DumpRegs(const argc: integer; argv: array of string): integer; { Dumps registry contents }
+function ShowDate(const argc: integer; argv: array of string): integer; { Shows the current date. }
+function Help(const argc: integer; argv: array of string): integer; { Shows the help message. }
+function SwitchDir(const argc: integer; argv: array of string): integer; { Changes the current working directory. }
+function PushDir(const argc: integer; argv: array of string): integer; { Push a directory to the top of directories stack. }
+function PopDir(const argc: integer; argv: array of string): integer; { Same as PushDir, but do the opposite }
+function Quit(const argc: integer; argv: array of string): integer; { Quits the current script/FPSH }
 
 { Internal shell functions }
 
@@ -54,11 +54,11 @@ function AmIRoot: boolean;
 { Internal variables, types and constants }
 
 type
-    TFSHCommands = record
+    RFSHCommands = record
         Name: String;
         Alias: String;
         Description: String;
-        Proc: procedure (const argc: Integer; argv: array of String);
+        Proc: function (const argc: Integer; argv: array of String): integer;
     end;
 
     TCommandsHistory = record
@@ -69,12 +69,12 @@ type
 var
     CommandsHistory: TCommandsHistory;
     Status: integer;
-    PS1: string;
+    DirStack: array of string;
 
 const
-    ShellCommands: array [1..{$ifdef FPOS}9{$else}7{$endif}] of TFSHCommands = (
+    ShellCommands: array [1..{$ifdef FPOS}9{$else}7{$endif}] of RFSHCommands = (
         (Name: 'cd'; Alias: ''; Description: 'Change working directory'; Proc: @SwitchDir),
-        (Name: 'date'; Alias: ''; Description: 'Get the current date'; Proc: @ShowDate),
+        (Name: 'date'; Alias: 'dt'; Description: 'Get the current date'; Proc: @ShowDate),
         (Name: 'exit'; Alias: ''; Description: 'Quits the script/FPSH'; Proc: @Quit),
         (Name: 'help'; Alias: ''; Description: 'Show this and exit'; Proc: @Help),
         (Name: 'popd'; Alias: ''; Description: 'The same as pushd, but the opposite'; Proc: @PopDir),
@@ -107,7 +107,7 @@ end;
 
 {$ifdef FPOS}
 
-procedure Restart(const argc: integer; argv: array of string);
+function Restart(const argc: integer; argv: array of string): integer;
 begin
     asm
         mov al, $FE
@@ -115,7 +115,7 @@ begin
     end ['eax'];
 end;
 
-procedure OSHalt(const argc: integer; argv: array of string);
+function OSHalt(const argc: integer; argv: array of string): integer;
 begin
     SetTextColor(scBlack, scLightGreen);
     WriteLn('OS halted itself. It''s now safe to turn off your computer/emulator.');
@@ -127,7 +127,7 @@ end;
 
 {$endif}
 
-procedure DumpRegs(const argc: integer; argv: array of string); { Dumps registry contents }
+function DumpRegs(const argc: integer; argv: array of string): integer; { Dumps registry contents }
 {$ifdef CPUI386}
 label
     GetEIP;
@@ -137,8 +137,9 @@ var
     EFLAGS, CurrentEIP: LongWord;
 
 begin
+    Result := 0;
     asm
-        // save registers while they are not modified by another procedure call. note that
+        // save registers while they are not modified by another function call. note that
         // depending on your compiler settings, ebp may already be trashed (stack frame)
         mov dword ptr Reg[4*0],eax
         mov dword ptr Reg[4*1],ecx
@@ -187,10 +188,11 @@ end;
 begin
 // not implemented on non-x86 platforms.
 // this was mainly made for FPOS though.
+    Result := 0;
 end;
 {$endif}
 
-procedure ShowDate(const argc: integer; argv: array of string);
+function ShowDate(const argc: integer; argv: array of string): integer;
 const
     Days: array [1..7] of String = (
         'Sunday', 'Monday', 'Tuesday', 'Wednesday',
@@ -209,6 +211,7 @@ begin
     // normally on FPOS GetTime is made differrent from the FPC's RTL
     // but whatever... the OS will be rewritten soon.
     // TODO: Custom formats
+    Result := 0;
     GetDate(Year, Month, Day, WDay);
     Str(Day, s);
     Write(Days[WDay + 1] + ', ' + Months[Month] + #32 + s);
@@ -225,11 +228,12 @@ begin
     Write(' ' + s + #13);
 end;
 
-procedure Help(const argc: integer; argv: array of string);
+function Help(const argc: integer; argv: array of string): integer;
 var
     i: Byte;
 
 begin
+    Result := 0;
     WriteLn(ParamStr(0) + ' [flags] [values/commands]');
     WriteLn('A shell written in Pascal.');
     WriteLn('(C) 2024 Le Bao Nguyen. Licensed under the GNU GPL Version 3.');
@@ -245,27 +249,44 @@ begin
         end;
 end;
 
-procedure SwitchDir(const argc: integer; argv: array of string);
+function SwitchDir(const argc: integer; argv: array of string): integer;
 begin
-    if argv[1] = '' then
-        writeln('An argument is required.')
-    else
-        ChDir(argv[1]);
-    if IOresult <> 0 then
-        WriteLn('Unable to change to ' + argv[1] + ' directory');
+    Result := 0;
+    if argv[1] = '' then begin
+        writeln('An argument is required.');
+        Result := 1;
+    end
+    else if not DirectoryExists(argv[1]) then begin
+        WriteLn(argv[1] + ': no such directory');
+        Result := 3;
+    end
+    else begin
+        SetCurrentDir(ExpandFileName(IncludeTrailingPathDelimiter(argv[1])));
+        if IOresult <> 0 then begin
+            WriteLn('Unable to change to ' + argv[1] + ' directory');
+            Result := IOresult;
+        end;
+    end;
 end;
 
-procedure PushDir(const argc: integer; argv: array of string);
+function PushDir(const argc: integer; argv: array of string): integer;
 begin
+    Result := 0;
 
+    if not DirectoryExists(argv[1]) then
+    begin
+        WriteLn(argv[1] + ': no such file or directory');
+        Result := 3;
+        Exit;
+    end;
 end;
 
-procedure PopDir(const argc: integer; argv: array of string);
+function PopDir(const argc: integer; argv: array of string): integer;
 begin
-
+    Result := 0;
 end;
 
-procedure Quit(const argc: integer; argv: array of string);
+function Quit(const argc: integer; argv: array of string): integer;
 var code: longint = 0;
 begin
     TryStrToInt(argv[1], code);

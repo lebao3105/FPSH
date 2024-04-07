@@ -20,11 +20,12 @@ function PSTwo: string;
 
 implementation
 
-uses internals, sysutils, pasyaml, classes;
+uses internals, sysutils, fpjson, jsonparser, classes;
 
 var
     file_read: TStringList;
-    YamlFile: TYamlFile;
+    jData: TJSONData;
+    jObject: TJSONObject;
 
     ps1_format: string;
     ps2_string: string;
@@ -60,21 +61,19 @@ initialization
 
 file_read := TStringList.Create;
 file_read.LoadFromFile(GetUserDir + '.fshrc');
+jData := GetJSON(file_read.Text, true);
+jObject := (jData as TJSONObject).Objects['prompt-strings'];
 
-YamlFile := TYamlFile.Create;
-YamlFile.Parse(file_read.Text);
+// the second argument of jObject.Get is the default value if
+// the key is not here with wanted type
+// keep this up-to-date with ../data/fshrc.schema.
+ps1_format := jObject.Get('ps1-format', '%(user)s %(currdir)s %(code)s %(type)s');
+ps2_string := jObject.Get('ps2-string', '...');
+type_normal := jObject.Get('type-normal', '$');
+type_root := jObject.Get('type-root', '#');
+currdir_name_only := jObject.Get('currdir-name-only', true);
+time_format := jObject.Get('time-format', 'dd/mm/yy hh/nn/ss');
 
-with YamlFile.Value['settings'] do
-begin
-    with Value['prompt-strings'] do begin
-        ps1_format := Value['ps1-format'].AsString;
-        ps2_string := Value['ps2'].AsString;
-        type_normal := Value['type-normal'].AsString;
-        type_root := Value['type-root'].AsString;
-        currdir_name_only := boolean(Value['currdir-name-only'].AsInteger);
-        time_format := Value['time-format'].AsString;
-    end;
-end;
-
+jObject.Free;
 file_read.Free;
 end.

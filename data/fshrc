@@ -1,6 +1,0 @@
-{
-	"$schema": "https://raw.githubusercontent.com/lebao3105/fpsh/main/data/fshrc.schema#",
-	"prompt-strings": {
-		"ps1-format": "[%(user)s] ~ [%(currdir)s] - [%(code)s] %(type)s"
-	}
-}

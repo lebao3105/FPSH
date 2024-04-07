@@ -13,8 +13,8 @@
                     "type": "string",
                     "default": "%(user)s %(currdir)s %(code)s %(type)s"
                 },
-                "ps2-format": {
-                    "description": "PS2 format. A space will be appended at the end of the string by FPSH.",
+                "ps2-string": {
+                    "description": "PS2 string. A space will be appended at the end of the string by FPSH.",
                     "type": "string",
                     "default": "..."
                 },

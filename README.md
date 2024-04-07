@@ -18,15 +18,13 @@ This shell is mainly made for FPOS (Free Pascal Operating System) but also avail
 
 ## Building
 
-Install `libyaml` and remember where its installed.
-
 Install make, git and of course fpc.
 
 Clone this project.
 
-Set `LIBYAML_PATH` to `<libyaml installation directory>/lib` and run `make all` or `make build` to fetch submodules and build. After that run `src/fsh`.
+Run `make all` or `make build` to fetch submodules and build. After that run `src/fsh`.
 
-Set `NO_SMARTLINK` to 1 to turn off smart linking option for fpc, also `NO_STRIP` to 1 to stop stripping the binary.
+Set `NO_SMARTLINK` to 1 to turn off smart linking option for fpc, also `NO_STRIP` to 1 to stop stripping the binary. Set `DEBUG` to 1 to not only enable 2 options above, but also add developer-oriented (add debug symbols etc) to the compiler. All of these are environment variables.
 
 ## TODOs
 

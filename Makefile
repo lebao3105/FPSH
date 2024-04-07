@@ -18,6 +18,14 @@ C_FLAGS += -Fl$(LIBYAML_PATH) -k-lyaml # -k = add flag to linker
 PREFIX = /usr/local
 DESTDIR =
 
+ifeq ($(DEBUG), 1)
+	NO_SMARTLINK = 1
+	NO_STRIP = 1
+	C_FLAGS += -g -B
+# https://castle-engine.io/memory_leaks
+	C_FLAGS += -glh
+endif
+
 ifeq ($(NO_SMARTLINK), 1)
 	C_FLAGS := $(filter-out -XX, $(C_FLAGS))
 endif
@@ -41,6 +49,8 @@ distclean: clean
 
 install: build
 	install -D src/fsh $(DESTDIR)$(PREFIX)/bin/fsh
+# Is this recommended?
+	install -D data/fshrc ~/.fshrc
 
 uninstall:
 	$(RM) -f $(DESTDIR)$(PREFIX)/bin/fsh

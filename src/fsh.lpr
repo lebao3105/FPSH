@@ -13,7 +13,7 @@ program fsh;
 {$mode ObjFPC} {$H+}
 
 uses
-    strutils, internals, sysutils, promptstrings, process, crt;
+    strutils, internals, sysutils, promptstrings, process;
 
 function IsShellCommand(const cmd: string; var idx: byte): boolean;
     function SearchCommand(l, r: Byte): Boolean;

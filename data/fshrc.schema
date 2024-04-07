@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Free Pascal Shell settings schema",
+    "type": "object",
+    "properties": {
+        "$schema": {"type": "string"},
+        "prompt-strings": {
+            "description": "Prompt strings (PS1 and PS2 for now) settings",
+            "type": "object",
+            "properties": {
+                "ps1-format": {
+                    "description": "PS1 format. A space will be appended at the end of the string by the shell itself.",
+                    "type": "string",
+                    "default": "%(user)s %(currdir)s %(code)s %(type)s"
+                },
+                "ps2-format": {
+                    "description": "PS2 format. A space will be appended at the end of the string by FPSH.",
+                    "type": "string",
+                    "default": "..."
+                },
+                "type-normal": {
+                    "description": "Shell run-as type (run as a normal user)",
+                    "type": "string",
+                    "default": "$"
+                },
+                "type-root": {
+                    "description": "The same as type-normal, but this is for root user",
+                    "type": "string",
+                    "default": "#"
+                },
+                "currdir-name-only": {
+                    "description": "Only shows the current directory NAME (for PS1)",
+                    "type": "boolean",
+                    "default": true
+                },
+                "time-format": {
+                    "description": "Time format (for PS1). Read www.freepascal.org/docs-html/sysutils/formatchars.html.",
+                    "type": "string",
+                    "default": "dd/mm/yy hh/nn/ss"
+                }
+            }
+        }
+    }
+}

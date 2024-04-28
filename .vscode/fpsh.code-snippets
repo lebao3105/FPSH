@@ -11,11 +11,18 @@
 			"",
 			"    This project is licensed in the same license as the FPOS project.",
 			"    *********************************************************************",
-			"}"
-		]
+			"}\n",
+			"unit $0;",
+			"{\u0024$mode objFPC} {\u0024$H+}", // LOL IT WORKS
+			"\n",
+			"interface\n",
+			"implementation\n",
+			"end."
+		],
+		"prefix": "unit"
 	},
-	"Internal command procedure/function args": {
-		"body": "const argc: integer; argv: array of string",
-		"prefix": "const"
+	"Internal command procedure/function": {
+		"body": "function $0(const argc: integer; argv: array of string): integer;",
+		"prefix": "function"
 	}
 }

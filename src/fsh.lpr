@@ -13,36 +13,7 @@ program fsh;
 {$mode ObjFPC} {$H+}
 
 uses
-    strutils, internals, sysutils, promptstrings, process;
-
-function IsShellCommand(const cmd: string; var idx: byte): boolean;
-    function SearchCommand(l, r: Byte): Boolean;
-    var
-        mid: Byte;
-
-    begin
-        if l > r then begin
-            SearchCommand := False;
-            Exit;
-        end;
-        mid := (l + r) div 2;
-        if (Cmd = ShellCommands[mid].Alias) then begin
-            SearchCommand := True;
-            idx := mid;
-        end;
-        if (Cmd < ShellCommands[mid].Name) then
-            SearchCommand := SearchCommand(l, mid - 1)
-        else if (Cmd > ShellCommands[mid].Name) then
-            SearchCommand := SearchCommand(mid + 1, r)
-        else begin
-            SearchCommand := True;
-            idx := mid;
-        end;
-    end;
-
-begin
-    IsShellCommand := SearchCommand(Low(ShellCommands), High(ShellCommands));
-end;
+    strutils, internals, sysutils, promptstrings, process, utilities;
 
 function RunProg(const cmd: string; argv: array of string): integer;
 var aprocess: TProcess; i: integer;
@@ -71,11 +42,27 @@ var
     search: string;
 
 begin
+    printdebug('Got ' + line);
+
     args := strutils.SplitString(line, ' ');
     cmd := args[0];
 
-    if IsShellCommand(lowerCase(cmd), i) then
-        Status := ShellCommands[i].Proc(High(args) - Low(args) + 1, args)
+    printdebug('Gonna try to search for ''' + cmd + '''');
+
+    if cmd in ShellCmdsAndAliases then begin
+        i := IndexStr(cmd, ShellCmdsAndAliases);
+
+        printdebug('''' + cmd + ''' index in commands + aliases list: ' + IntToStr(i));
+        printdebug('The list is made for internal commands and aliases first.');
+
+        if i >= (Length(ShellCommands) + 1) then
+        begin
+            i := i - Length(ShellCommands);
+        end;
+
+        Status := ShellCommands[i].Proc(High(args) + 1, args);
+    end
+
     else begin
         args_string := StringReplace(line, cmd + ' ', '', []);
 

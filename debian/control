@@ -1,0 +1,16 @@
+Source: fpsh
+Section: Utilities
+Priority: optional
+Maintainer: Le Bao Nguyen <bao12345yocoo@gmail.com>
+Build-Depends: debhelper-compat (= 13), fpc, make
+Standards-Version: 4.6.0
+Homepage: https://github.com/lebao3105/fpsh
+Vcs-Browser: https://github.com/lebao3105/fpsh
+Vcs-Git: https://github.com/lebao3105/fpsh.git
+Rules-Requires-Root: no
+
+Package: fpsh
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: A shell

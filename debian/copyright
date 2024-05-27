@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: fpsh
+Upstream-Contact: Le Bao Nguyen <bao12345yocoo@gmail.com>
+Source: 
+
+Files: *
+Copyright: 2024 Le Bao Nguyen <bao12345yocoo@gmail.com>
+License file: LICENSE

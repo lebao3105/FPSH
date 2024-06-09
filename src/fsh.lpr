@@ -13,9 +13,70 @@ program fsh;
 {$mode ObjFPC} {$H+}
 
 uses
-    strutils, internals, sysutils, promptstrings, process, utilities;
+    custapp, strutils, internals,
+    sysutils, promptstrings, process, utilities;
 
-function RunProg(const cmd: string; argv: array of string): integer;
+type TFPSH = class(TCustomApplication)
+    protected
+        procedure DoRun; override;
+    private
+        function RunProg(const cmd: string; argv: array of string): integer;
+        procedure ProcessLine(const line: string);
+        procedure WriteHelp;
+end;
+
+procedure TFPSH.DoRun;
+
+var errorMsg: string;
+    input: string;
+    f: TextFile;
+    tmp: string;
+
+begin
+    errorMsg := CheckOptions('hc:f:', ['help', 'command:', 'file:']);
+
+    if errorMsg <> '' then begin
+        WriteLn('Got an error: ' + errorMsg);
+        Terminate;
+        Exit;
+    end;
+
+    if HasOption('h', 'help') then begin
+        WriteHelp;
+        Terminate;
+        Exit;
+    end;
+
+    if HasOption('c', 'command') then begin
+        ProcessLine(GetOptionValue('c', 'command'));
+        Terminate;
+        Exit;
+    end;
+
+    if HasOption('f', 'file') then begin
+        AssignFile(f, GetOptionValue('f', 'file'));
+        Reset(f);
+
+        while not EOF(f) do begin
+            ReadLn(f, tmp);
+            ProcessLine(tmp);
+        end;
+
+        Close(f);
+        Terminate;
+        Exit;
+    end;
+
+    while true do begin
+        Write(PSOne);
+        ReadLn(input);
+        ProcessLine(input);
+    end;
+
+    Terminate;
+end;
+
+function TFPSH.RunProg(const cmd: string; argv: array of string): integer;
 var aprocess: TProcess; i: integer;
 begin
     aprocess := TProcess.Create(nil);
@@ -33,7 +94,7 @@ begin
     Result := aprocess.ExitCode;
 end;
 
-procedure ProcessLine(const line: string);
+procedure TFPSH.ProcessLine(const line: string);
 var
     i: byte;
     cmd: string;
@@ -60,7 +121,7 @@ begin
             i := i - Length(ShellCommands);
         end;
 
-        Status := ShellCommands[i].Proc(High(args) + 1, args);
+        Status := ShellCommands[i].Proc(args);
     end
 
     else begin
@@ -82,13 +143,17 @@ begin
     end;
 end;
 
-var
-    input: string;
+procedure TFPSH.WriteHelp;
+begin
+    Help(['no-internal']);
+end;
+
+var App: TFPSH;
 
 begin
-    while true do begin
-        Write(PSOne + ' ');
-        ReadLn(input);
-        ProcessLine(input);
-    end;
+    App := TFPSH.Create(nil);
+    App.Title := 'fpsh';
+    App.StopOnException := true; // should I?
+    App.Run;
+    App.Free;
 end.

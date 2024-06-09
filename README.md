@@ -22,9 +22,9 @@ Clone this project.
 
 Run `make all` or `make build` to fetch submodules and build. After that run `src/fsh`.
 
-Set `NO_SMARTLINK` to 1 to turn off smart linking option for fpc, also `NO_STRIP` to 1 to stop stripping the binary. Set `DEBUG` to 1 to not only enable 2 options above, but also add developer-oriented (add debug symbols etc) to the compiler. All of these are environment variables.
+Set `NO_SMARTLINK` to 1 to turn off smart linking option for fpc, also `NO_STRIP` to 1 to stop stripping the binary. Set `DEBUG` to 1 to add developer-oriented (add debug symbols etc) to the compiler. All of these are environment variables.
 
-Run the program with `DEBUG=1` will enable FPSH's debugging messages.
+Run the program with `DEBUG=1` will enable FPSH's debugging messages, even in production builds.
 
 ## TODOs
 

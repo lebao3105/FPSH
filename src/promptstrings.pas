@@ -34,8 +34,13 @@ var
 
 function PSOne: string;
 begin
-    Result := StringReplace(ps1_format, '%(user)s', GetEnvironmentVariable('USERNAME'), [rfReplaceAll]);
-    Result := StringReplace(Result, '%(currdir)s', GetCurrentDir, [rfReplaceAll]);
+    Result := StringReplace(ps1_format, '%(user)s', GetEnvironmentVariable('USER'), [rfReplaceAll]);
+
+    if currdir_name_only then
+        Result := StringReplace(Result, '%(currdir)s', GetCurrentDir, [rfReplaceAll])
+    else
+        Result := StringReplace(Result, '%(currdir)s', ExtractFileName(GetCurrentDir), [rfReplaceAll]);
+
     Result := StringReplace(Result, '%(code)s', IntToStr(Status), [rfReplaceAll]);
     Result := StringReplace(Result, '%(time)s', FormatDateTime(time_format, Now), [rfReplaceAll]);
     Result := Result + ' ';

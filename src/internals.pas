@@ -44,6 +44,9 @@ var
     DirStack: array of string = ();
     ShellCmdsAndAliases: array of string;
 
+const
+    version: string = '0.1';
+
 { Internal commands }
 
 function Help(const argc: integer; argv: array of string): integer;
@@ -82,6 +85,7 @@ var
 begin
     Result := 0;
     WriteLn(ParamStr(0) + ' [flags] [values/commands]');
+    WriteLn('Version ' + version + '.');
     WriteLn('A shell written in Pascal.');
     WriteLn('(C) 2010-2021 Yacine REZGUI.');
     WriteLn('(C) 2024 Le Bao Nguyen.');

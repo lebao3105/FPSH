@@ -30,7 +30,7 @@ type
         Name: String;
         Alias: String;
         Description: String;
-        Proc: function (const argc: Integer; argv: array of String): integer;
+        Proc: function (const argv: array of String): integer;
     end;
 
     TCommandsHistory = record
@@ -46,15 +46,20 @@ var
 
 const
     version: string = '0.1';
+    flagsHelp: array of array of string = (
+        ('-f [path]/ --file=[path]', 'Script to execute'),
+        ('-c [command] / --command=[command]', 'Run a (list of) command(s)'),
+        ('-h / --help', 'Show this help')
+    );
 
 { Internal commands }
 
-function Help(const argc: integer; argv: array of string): integer;
-function SwitchDir(const argc: integer; argv: array of string): integer;
-function PushDir(const argc: integer; argv: array of string): integer;
-function PopDir(const argc: integer; argv: array of string): integer;
-function Quit(const argc: integer; argv: array of string): integer;
-function ShowDirStack(const argc: integer; argv: array of string): integer;
+function Help(const argv: array of string): integer;
+function SwitchDir(const argv: array of string): integer;
+function PushDir(const argv: array of string): integer;
+function PopDir(const argv: array of string): integer;
+function Quit(const argv: array of string): integer;
+function ShowDirStack(const argv: array of string): integer;
 
 { Internal shell functions }
 
@@ -78,7 +83,7 @@ implementation
 // variables here are mostly used for the initialization tasks
 var n: integer;
 
-function Help(const argc: integer; argv: array of string): integer;
+function Help(const argv: array of string): integer;
 var
     i: Byte;
 
@@ -86,25 +91,34 @@ begin
     Result := 0;
     WriteLn(ParamStr(0) + ' [flags] [values/commands]');
     WriteLn('Version ' + version + '.');
+    WriteLn;
     WriteLn('A shell written in Pascal.');
     WriteLn('(C) 2010-2021 Yacine REZGUI.');
     WriteLn('(C) 2024 Le Bao Nguyen.');
     WriteLn('Licensed under the GNU GPL Version 3.');
     WriteLn;
-    WriteLn('Internal commands:');
-    for i := Low(ShellCommands) to High(ShellCommands) do
-        with ShellCommands[i] do begin
-            Write(Name);
-            if (Alias <> '') then
-                Write(' (' + Alias + ')');
-            Write(StringOfChar(' ', 8 - Length(Name) + 1));
-            WriteLn(Description);
-        end;
-    WriteLn('Set DEBUG environment variable to enable debugging messages.');
+
+    if argv[1] <> 'no-internal' then begin
+        WriteLn('Internal commands:');
+        for i := Low(ShellCommands) to High(ShellCommands) do
+            with ShellCommands[i] do begin
+                Write(Name);
+                if (Alias <> '') then
+                    Write(' (' + Alias + ')');
+                Write(StringOfChar(' ', 8 - Length(Name) + 1));
+                WriteLn(Description);
+            end;
+    end
+    else begin
+
+    end;
+    WriteLn('Set DEBUG environment variable to 1 to enable debugging messages.');
 end;
 
-function SwitchDir(const argc: integer; argv: array of string): integer;
+function SwitchDir(const argv: array of string): integer;
+var argc: integer;
 begin
+    argc := Length(argv);
     Result := 0;
 
     if argc = 0 then begin
@@ -127,12 +141,14 @@ begin
 
 end;
 
-function PushDir(const argc: integer; argv: array of string): integer;
+function PushDir(const argv: array of string): integer;
 // please allow new variables to be created outside this var sectionnnnn
 var
     Target, i: integer;
     Backup: string;
+    argc: integer;
 begin
+    argc := Length(argv);
     Result := 0;
 
     if argc = 0 then begin
@@ -167,7 +183,7 @@ begin
 
         printdebug('Target directory to move to: ' + Backup);
 
-        SwitchDir(1, ['', Backup]);
+        SwitchDir(['', Backup]);
 
         for i := Target + 1 to High(DirStack) do
             DirStack[i-1] := DirStack[i];
@@ -186,10 +202,10 @@ begin
 
     SetLength(DirStack, Length(DirStack) + 1);
     DirStack[High(DirStack)] := ExpandFileName(IncludeTrailingPathDelimiter(argv[1]));
-    SwitchDir(1, argv);
+    SwitchDir(argv);
 end;
 
-function PopDir(const argc: integer; argv: array of string): integer;
+function PopDir(const argv: array of string): integer;
 var
     Target: integer = -1;
 begin
@@ -232,7 +248,7 @@ begin
     Delete(DirStack, Target - 1, 1); // let's try if this works
 end;
 
-function Quit(const argc: integer; argv: array of string): integer;
+function Quit(const argv: array of string): integer;
 var code: longint = 0;
 begin
     TryStrToInt(argv[1], code);
@@ -240,7 +256,7 @@ begin
     halt(code);
 end;
 
-function ShowDirStack(const argc: integer; argv: array of string): integer;
+function ShowDirStack(const argv: array of string): integer;
 var n: integer;
 begin
     for n := Low(DirStack) to High(DirStack) do

@@ -22,7 +22,7 @@
 		"prefix": "unit"
 	},
 	"Internal command procedure/function": {
-		"body": "function $0(const argc: integer; argv: array of string): integer;",
+		"body": "function $0(const argv: array of string): integer;",
 		"prefix": "function"
 	}
 }

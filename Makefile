@@ -2,7 +2,7 @@ C = fpc
 
 # -Xs = auto strip at program compile time
 # -XX = smartlinking (ignore uneccessary code)
-C_FLAGS = -Xs -XX
+C_FLAGS = -Xs -XX -Fusrc/language
 
 # Install prefix and destination dir
 PREFIX = /usr/local

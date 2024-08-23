@@ -17,12 +17,8 @@ interface
 uses
     sysutils;
 
-type
-    ELogLevels = (INFO, ERROR, DEBUG, DONE);
-
 { Logging functions }
 
-procedure log(const message: string; level: ELogLevels);
 procedure printinfo(const message: string);
 procedure printdebug(const message: string);
 procedure printerror(const message: string);
@@ -31,16 +27,6 @@ procedure printsuccess(const message: string);
 { Some more things }
 
 implementation
-
-procedure log(const message: string; level: ELogLevels);
-begin
-    case level of
-        ERROR: printerror(message);
-        INFO: printinfo(message);
-        DONE: printsuccess(message);
-        DEBUG: printdebug(message);
-    end;
-end;
 
 procedure printinfo(const message: string);
 begin

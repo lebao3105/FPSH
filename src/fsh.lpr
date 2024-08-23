@@ -13,16 +13,17 @@ program fsh;
 {$mode ObjFPC} {$H+}
 
 uses
-    custapp, strutils, internals,
-    sysutils, promptstrings, process, utilities;
+    custapp, strutils, internals,  {readline, }
+    sysutils, promptstrings, process, utilities,
+    scanner;
 
 type TFPSH = class(TCustomApplication)
-    protected
-        procedure DoRun; override;
-    private
-        function RunProg(const cmd: string; argv: array of string): integer;
-        procedure ProcessLine(const line: string);
-        procedure WriteHelp;
+protected
+    procedure DoRun; override;
+private
+    function RunProg(const cmd: string; argv: array of string): integer;
+    procedure ProcessLine(const line: string);
+    procedure WriteHelp;
 end;
 
 procedure TFPSH.DoRun;
@@ -33,27 +34,34 @@ var errorMsg: string;
     tmp: string;
 
 begin
-    errorMsg := CheckOptions('hc:f:', ['help', 'command:', 'file:']);
+    errorMsg := CheckOptions('hc:f:w:', ['help', 'command:', 'file:', 'where:']);
 
-    if errorMsg <> '' then begin
+    if errorMsg <> '' then
+    begin
+        WriteHelp;
         WriteLn('Got an error: ' + errorMsg);
         Terminate;
         Exit;
     end;
 
-    if HasOption('h', 'help') then begin
+    if HasOption('h', 'help') then
+    begin
         WriteHelp;
         Terminate;
         Exit;
     end;
 
-    if HasOption('c', 'command') then begin
+    if HasOption('c', 'command') then
+    begin
+        printdebug('(FSH argument) got a command to run.');
         ProcessLine(GetOptionValue('c', 'command'));
         Terminate;
         Exit;
     end;
 
-    if HasOption('f', 'file') then begin
+    if HasOption('f', 'file') then
+    begin
+        printdebug('(FSH argument) got a file to run');
         AssignFile(f, GetOptionValue('f', 'file'));
         Reset(f);
 
@@ -67,9 +75,16 @@ begin
         Exit;
     end;
 
+    if HasOption('w', 'where') then
+    begin
+        printdebug('(FSH argument) got a directory to switch to');
+        SetCurrentDir(GetOptionValue('w', 'where'));
+    end;
+
     while true do begin
-        Write(PSOne);
-        ReadLn(input);
+        // input := readline.readLine(pchar(PSOne()), pchar(PSTWO()));
+        write(PSOne());
+        readln(input);
         ProcessLine(input);
     end;
 
@@ -110,7 +125,8 @@ begin
 
     printdebug('Gonna try to search for ''' + cmd + '''');
 
-    if cmd in ShellCmdsAndAliases then begin
+    if cmd in ShellCmdsAndAliases then
+    begin
         i := IndexStr(cmd, ShellCmdsAndAliases);
 
         printdebug('''' + cmd + ''' index in commands + aliases list: ' + IntToStr(i));
@@ -129,10 +145,16 @@ begin
 
         if args_string = cmd then args_string := '';
 
-        if not FileExists(cmd) then begin
-            search := ExeSearch(lowerCase(cmd), GetEnvironmentVariable('PATH'));
-            if search <> '' then begin
-                Status := RunProg(cmd, SplitString(args_string, ' '));
+        if not FileExists(cmd) then
+        begin
+            printdebug(GetCurrentDir() + DirectorySeparator + cmd + ' not found.');
+            printdebug('Finding ' + cmd + ' in PATH environment variable');
+
+            search := ExeSearch(cmd, GetEnvironmentVariable('PATH'));
+            if search <> '' then
+            begin
+                printdebug('Found in PATH: ' + search);
+                Status := RunProg(search, SplitString(args_string, ' '));
             end
             else
                 WriteLn('''' + cmd + ''' is not recognized as an internal command ' +
@@ -153,7 +175,6 @@ var App: TFPSH;
 begin
     App := TFPSH.Create(nil);
     App.Title := 'fpsh';
-    App.StopOnException := true; // should I?
     App.Run;
     App.Free;
 end.

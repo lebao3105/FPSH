@@ -113,6 +113,8 @@ begin
 
     end;
     WriteLn('Set DEBUG environment variable to 1 to enable debugging messages.');
+    WriteLn('Run man fsh-<command> for command help. man fsh for FSH informations.');
+    WriteLn('Run man fsh-codes for some exit codes.');
 end;
 
 function SwitchDir(const argv: array of string): integer;
@@ -121,18 +123,20 @@ begin
     argc := Length(argv);
     Result := 0;
 
-    if argc = 0 then begin
+    if argc = 0 then
+    begin
         writeln('An argument is required.');
         Result := 1;
     end
 
-    else if not DirectoryExists(argv[1]) then begin
+    else if not DirectoryExists(argv[1]) then
+    begin
         WriteLn(argv[1] + ': no such directory');
         Result := 3;
     end
 
     else begin
-        SetCurrentDir(ExpandFileName(IncludeTrailingPathDelimiter(argv[1])));
+        SetCurrentDir(ExpandFileName(argv[1]));
         if IOresult <> 0 then begin
             WriteLn('Unable to change to ' + argv[1] + ' directory');
             Result := IOresult;

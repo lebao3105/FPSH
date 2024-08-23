@@ -8,6 +8,11 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 override_dh_auto_install:
 	dh_auto_install -- PREFIX=/usr
+	
+	pushd ..
+	echo $(find data -not -name "*.schema" -not -name "data") > debian/manpages
+	popd
+	dh_installman
 
 override_dh_shlibdeps:
 	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info

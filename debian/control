@@ -12,5 +12,5 @@ Rules-Requires-Root: no
 Package: fpsh
 Architecture: any
 Multi-Arch: foreign
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, man-db
 Description: A shell

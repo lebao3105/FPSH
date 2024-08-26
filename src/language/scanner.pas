@@ -14,19 +14,53 @@ unit scanner;
 
 interface
 
-uses tokens, fpshlang, character, variants;
+uses tokens, fpshlang, character, variants, strutils, sysutils;
 
 type
     TScanner = class(TObject)
     private
-        source: string;
-        tokens: array of Token;
-        start: integer;
-        current: integer;
-        line: integer;
 
-        { Returns whether we've reached EOLine or not }
-        function isAtEnd: boolean;
+        { The string to be scanned }
+        source: string;
+
+        { The current line of the source string }
+        line: string;
+
+        { Tokens }
+        tokens: array of Token;
+
+        { Start index of the object (operator, identifier etc) }
+        start: integer;
+
+        { The current index of the source string }
+        current: integer;
+
+        { The current line number of the source string }
+        lineno: integer;
+
+        { Times ( or ) got encountered and not matched. }
+        paren_times: integer;
+
+        { Times one of 2 braces got encountered and not matched. }
+        braces_times: integer;
+
+        { The source string, splited by new lines character }
+        source_lines: array of ansistring;
+
+        { IsEOL's getter }
+        function getIsEOL: boolean;
+
+        { IsEOF's getter }
+        function getIsEOF: boolean;
+
+        { currentLine's getter }
+        function getCurrentLine: string;
+
+        { currentLineNo's getter }
+        function getCurrentLineNo: integer;
+
+        { currentLineNo's setter}
+        procedure setCurrentLineNo(num: integer);
 
         { Scans for tokens, line by line. }
         procedure scanTokens;
@@ -37,14 +71,16 @@ type
         { Returns the current character in line. #0 (null character) if we're in EOL. }
         function peek: char;
 
-        { Checks if the current character matches the expected one. }
-        function matchCurrent(expected: char): boolean;
+        { Checks if the next character matches the expected one. }
+        function matchNext(expected: char): boolean;
 
         { Adds a new token. }
         procedure addToken(token_type: TokenTypes);
 
         { Adds a new token (overload) }
         procedure addToken(token_type: TokenTypes; literal: variant); overload;
+
+        function KeywordToTokenType(lexeme: string): TokenTypes;
 
         { Finds string (starts and ends with ") }
         procedure getString;
@@ -60,35 +96,112 @@ type
         { Finds an identifier (keywords included). }
         procedure getIdentifier;
 
+        { Increase the current line, if the source string has more than 1 line. }
+        function incLine: boolean;
+
     public
+
+        { Constructor. }
         constructor Create(source_: string);
 
+        { Returns whether we've reached EOLine or not }
+        property isEOL: boolean read getIsEOL;
+
+        { Returns whether we're in EOFile }
+        property isEOF: boolean read getIsEOF;
+
+        { The current line of source string, followed by its line number. }
+        property currentLine: ansistring read getCurrentLine;
+
+        { The current line number }
+        property currentLineNo: integer read getCurrentLineNo write setCurrentLineNo;
     end;
 
 implementation
 
+/// Constructor
+
 constructor TScanner.Create(source_: string);
 var i: integer;
 begin
-    self.source := source;
+    self.source := source_;
+    source_lines := SplitString(source, sLineBreak);
+    if Length(source_lines) = 0 then
+        source_lines := [source];
+
     start := 1;
     current := 1;
-    line := 1;
+    lineno := 1;
+
+    paren_times := 0;
+    braces_times := 0;
+
     scanTokens;
     for i := low(tokens) to high(tokens) do
         writeln(tokens[i].toString);
 end;
 
-function TScanner.isAtEnd: boolean;
+
+/// Property getters and setters
+
+function TScanner.getIsEOL: boolean;
 begin
-    Result := current >= length(source);
+    Result := current > Length(currentLine);
+end;
+
+function TScanner.getIsEOF: boolean;
+begin
+    Result := (lineno = length(source_lines)) and IsEOL;
+end;
+
+function TScanner.getCurrentLine: ansistring;
+begin
+    Result := source_lines[lineno];
+end;
+
+function TScanner.getCurrentLineNo: integer;
+begin
+    Result := lineno;
+end;
+
+procedure TScanner.setCurrentLineNo(num: integer);
+begin
+    lineno := num;
+    current := 1;
+    start := 1;
+end;
+
+/// Utility functions
+
+function TScanner.peek: char;
+begin
+    if isEOL or isEOF then Result := #0
+    else Result := currentLine[current];
+end;
+
+function TScanner.peekNext: char;
+begin
+    Result := currentLine[current + 1];
 end;
 
 function TScanner.nextChar: char;
 begin
-    Result := peek;
+    Result := peekNext;
     inc(current);
 end;
+
+function TScanner.matchNext(expected: char): boolean;
+begin
+    Result := peekNext = expected;
+end;
+
+function TScanner.incLine: boolean;
+begin
+    Result := Length(source_lines) > 1;
+    if Result then setCurrentLineNo(lineno + 1);
+end;
+
+/// addToken()
 
 procedure TScanner.addToken(token_type: TokenTypes);
 begin
@@ -97,123 +210,107 @@ end;
 
 procedure TScanner.addToken(token_type: TokenTypes; literal: variant); overload;
 begin
-    setLength(tokens, Length(tokens) + 1);
-    insert(Token.Create(token_type, copy(source, start, current), literal, line),
-           tokens, High(tokens));
+    SetLength(tokens, Length(tokens) + 1);
+    Insert(
+        Token.Create(
+            token_type,
+            copy(currentLine, start, current - start),
+            literal, lineno
+        ),
+        tokens, High(tokens)
+    );
+    inc(current);
+    start := current;
 end;
 
-function TScanner.matchCurrent(expected: char): boolean;
-begin
-    if isAtEnd() then Result := false
-    else Result := (nextChar() = expected);
-end;
-
-function TScanner.peek: char;
-begin
-    if isAtEnd() then Result := #0
-    else Result := source[current];
-end;
-
-function TScanner.peekNext: char;
-begin
-    if (current + 1) >= length(source) then Result := #0
-    else Result := source[current + 1];
-end;
-
-// function TScanner.isDigit(character: char): boolean;
-// begin
-//     Result := '9' >= character >= '0';
-// end;
+/// Scanners
 
 procedure TScanner.getNumber;
+var hasDecimal: boolean = false;
 begin
-    while isDigit(peek) do nextChar;
+    while IsDigit(peek) do nextChar;
 
-    if (peek() = '.') and isDigit(peekNext) then
-    begin
+    if peek = '.' then begin
+        hasDecimal := true;
         nextChar;
-        while (isDigit(peek)) do nextChar;
+        while IsDigit(peek) do nextChar;
     end;
 
-    addToken(NUMBER, Double(copy(source, start, current)));
-end;
-
-procedure TScanner.getIdentifier;
-begin
-    while (isLetter(peek) or isDigit(peek)) do nextChar;
-    // TODO: keywords
-    addToken(IDENTIFIER);
+    if hasDecimal then
+        addToken(NUMBER, StrToFloat(copy(source, start, current - start)))
+    else
+        addToken(NUMBER, StrToInt(copy(source, start, current - start)));
 end;
 
 procedure TScanner.getString;
 begin
-    while (peek() <> '"') and not isAtEnd do
-    begin
-        if (peek() = sLineBreak) then Inc(line);
-        nextChar;
+    while peek <> '"' do nextChar;
+    addToken(TokenTypes.STR, copy(source, start + 1, current - 1 - start))
+end;
+
+procedure TScanner.getIdentifier;
+begin
+    while IsLetterOrDigit(peek) do nextChar;
+  
+    addToken(KeywordToTokenType(copy(currentLine, start, current - start)));
+end;
+
+function TScanner.KeywordToTokenType(lexeme: string): TokenTypes;
+begin
+    case lexeme of
+        'and': Result := AND_;
+        'class': Result := CLASS_;
+        'else': Result := ELSE_;
+        'false': Result := FALSE_;
+        'fun': Result := FUN;
+        'for': Result := FOR_;
+        'if': Result := IF_;
+        'nil': Result := NIL_;
+        'or': Result := OR_;
+        'give': Result := GIVE;
+        'super': Result := SUPER;
+        'this': Result := THIS;
+        'true': Result := TRUE_;
+        'var': Result := VAR_;
+        'while': Result := WHILE_;
+    else
+        Result := IDENTIFIER;
     end;
-
-    if isAtEnd then
-        raise ESyntaxError.Create(line, high(source), source);
-    
-    nextChar;
-
-    addToken(TokenTypes.STR, copy(source, start + 1, current - 1));
 end;
 
 procedure TScanner.scanTokens;
 var
     character: char;
-
+    ln: integer;
 begin
-    character := nextChar();
+    for ln := Low(source_lines) to High(source_lines) do
+    begin
+        currentLineNo := ln;
+        character := nextChar;
 
-    case character of
-        '(': addToken(LEFT_PAREN);
-        ')': addToken(RIGHT_PAREN);
-        '{': addToken(LEFT_BRACE);
-        '}': addToken(RIGHT_BRACE);
-        ',': addToken(COMMA);
-        '.': addToken(DOT);
-        '-': addToken(MINUS);
-        '+': addToken(PLUS);
-        ';': addToken(SEMICOLON);
-        '*': addToken(STAR);
-        '!':
-            if matchCurrent('=') then
-                addToken(BANG_EQUAL)
-            else
-                addToken(BANG);
-        '=':
-            if matchCurrent('=') then
-                addToken(EQUAL_EQUAL)
-            else
-                addToken(EQUAL);
-        '<':
-            if matchCurrent('=') then
-                addToken(LESS_EQUAL)
-            else
-                addToken(LESS);
-        '>':
-            if matchCurrent('=') then
-                addToken(GREATER_EQUAL)
-            else
-                addToken(GREATER);
-        '/':
-            if matchCurrent('/') then
-                while (peek() <> sLineBreak) and (not isAtEnd()) do nextChar
-            else
-                addToken(SLASH);
-        ' ', #13, #9: // spaces, tabs, \r
-            ;
-        #10:
-            inc(line);
-        '"': getString;
-        
-    else
-        if isDigit(character) then getNumber()
-        else if isLetter(character) then getIdentifier()
-        else raise ESyntaxError.Create(line, current, source);
+        case character of
+            '(': begin addToken(LEFT_PAREN); inc(paren_times); end;
+            ')': begin addToken(RIGHT_PAREN); dec(paren_times); end;
+            '{': begin addToken(LEFT_BRACE); inc(braces_times); end;
+            '}': begin addToken(RIGHT_BRACE); dec(braces_times); end;
+            '+': addToken(PLUS);
+            '-': addToken(MINUS);
+            '"': getString;
+            '/': if matchNext('/') then continue else addToken(SLASH);
+            '#', #10: continue;
+            '0'..'9': getNumber;
+            '*': addToken(STAR);
+            ';': addToken(SEMICOLON);
+            '=': if matchNext('=') then addToken(EQUAL_EQUAL) else addToken(EQUAL);
+            '!': if matchNext('=') then addToken(BANG_EQUAL) else addToken(BANG);
+            ' ', #13, #9: ;
+            // #10: self.incLine;
+            'a'..'z', 'A'..'Z': getIdentifier;
+        else
+            if paren_times > 0 then raise EScript.Create(lineno, current, currentLine, 'Unmatched parentheses');
+            if braces_times > 0 then raise EScript.Create(lineno, current, currentLine, 'Unmatched braces');
+            raise EScript.Create(lineno, current, currentLine, 'Unknown character');
+        end;
     end;
 end;
 

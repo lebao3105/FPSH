@@ -14,7 +14,7 @@ unit tokens;
 
 interface
 
-uses sysutils, variants;
+uses sysutils, variants, typinfo;
 
 type
     TokenTypes = (
@@ -55,9 +55,12 @@ begin
 end;
 
 function Token.toString(): string;
+var stringofliteral: string;
 begin
+    if Vartype(literal) = varnull then stringofliteral := '' else stringofliteral := VarToStr(literal);
     // maybe use TStringHelper.join?
-    Result := Format('%s %s %s', [ token_type, lexeme, literal ]);
+    Result := Format('%s %s %s', [
+        GetEnumName(typeinfo(TokenTypes), ord(token_type)), lexeme, stringofliteral ]);
 end;
 
 end.

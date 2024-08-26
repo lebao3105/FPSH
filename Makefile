@@ -26,11 +26,11 @@ endif
 
 all: clean build
 
-build: update
+build:
 	$(C) $(C_FLAGS) src/fsh.lpr
 
-update:
-	git submodule update --init --recursive
+#update:
+#	git submodule update --init --recursive
 
 clean: 
 	$(RM) $(wildcard ./**/*.ppu) $(wildcard ./**/*.o) src/fsh src/fsh.exe

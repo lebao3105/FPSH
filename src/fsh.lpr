@@ -15,16 +15,25 @@ program fsh;
 uses
     custapp, strutils, internals,  {readline, }
     sysutils, promptstrings, process, utilities,
-    scanner;
+    {scanner,} history;
 
-type TFPSH = class(TCustomApplication)
-protected
-    procedure DoRun; override;
-private
-    function RunProg(const cmd: string; argv: array of string): integer;
-    procedure ProcessLine(const line: string);
-    procedure WriteHelp;
-end;
+type
+    /// Main application class.
+    TFPSH = class(TCustomApplication)
+    protected
+        /// Main function that handles command-line arguments
+        /// and base setup for the interactive console
+        /// (look at the code instead of this description if
+        /// you don't understand)
+        procedure DoRun; override;
+    private
+
+        /// Process entered line (for both script and interactive mode)
+        procedure ProcessLine(const line: string);
+
+        /// Write out the help message
+        procedure WriteHelp;
+    end;
 
 procedure TFPSH.DoRun;
 
@@ -79,34 +88,18 @@ begin
     begin
         printdebug('(FSH argument) got a directory to switch to');
         SetCurrentDir(GetOptionValue('w', 'where'));
-    end;
+    end
+    else
+        DirStack.Add(GetCurrentDir);
 
     while true do begin
-        // input := readline.readLine(pchar(PSOne()), pchar(PSTWO()));
         write(PSOne());
         readln(input);
         ProcessLine(input);
+        CommandsHistory.Add(input);
     end;
 
     Terminate;
-end;
-
-function TFPSH.RunProg(const cmd: string; argv: array of string): integer;
-var aprocess: TProcess; i: integer;
-begin
-    aprocess := TProcess.Create(nil);
-    aprocess.Executable := cmd;
-    for i := Low(argv) to High(argv) do
-    begin
-        // writeln(argv[i]);
-        aprocess.Parameters.Add(argv[i]);
-    end;
-    aprocess.Options := aprocess.Options + [poWaitOnExit];
-    // writeln(CurrDir);
-    aprocess.CurrentDirectory := GetCurrentDir;
-    aprocess.Execute;
-    aprocess.Free;
-    Result := aprocess.ExitCode;
 end;
 
 procedure TFPSH.ProcessLine(const line: string);
@@ -119,6 +112,7 @@ var
 
 begin
     printdebug('Got ' + line);
+    // Scanner.TScanner.Create(line);
 
     args := strutils.SplitString(line, ' ');
     cmd := args[0];
@@ -154,14 +148,14 @@ begin
             if search <> '' then
             begin
                 printdebug('Found in PATH: ' + search);
-                Status := RunProg(search, SplitString(args_string, ' '));
+                Status := RunProgram(search, SplitString(args_string, ' '));
             end
             else
                 WriteLn('''' + cmd + ''' is not recognized as an internal command ' +
                         'or external command, operable program or batch file, a function or a variable.');
         end
         else
-            Status := RunProg(cmd, SplitString(args_string, ' '));
+            Status := RunProgram(cmd, SplitString(args_string, ' '));
     end;
 end;
 

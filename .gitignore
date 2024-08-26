@@ -3,10 +3,17 @@
 *.ppu
 *.a
 *.res
+*.dll
+*.a
+*.dylib
+
 fsh*
 !src/fsh.lpr
 !data/fsh*
+
 source/
 FPCSource/
 fpcmade*
 units*
+
+debian/manpages

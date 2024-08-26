@@ -15,7 +15,7 @@ unit utilities;
 interface
 
 uses
-    sysutils;
+    sysutils, process;
 
 { Logging functions }
 
@@ -25,6 +25,8 @@ procedure printerror(const message: string);
 procedure printsuccess(const message: string);
 
 { Some more things }
+
+function RunProgram(const prog: string; argv: array of string): integer;
 
 implementation
 
@@ -47,6 +49,32 @@ end;
 procedure printsuccess(const message: string);
 begin
     writeln('[Shell - Success] ', message);
+end;
+
+function RunProgram(const prog: string; argv: array of string): integer;
+var
+    aprocess: TProcess;
+
+begin
+    aprocess := TProcess.Create(nil);
+
+    { Program to be ran }
+    aprocess.Executable := prog;
+
+    { Program arguments }
+    aprocess.Parameters.AddStrings(argv);
+
+    { Run options
+      https://www.freepascal.org/docs-html/fcl/process/tprocess.options.html }
+    aprocess.Options := aprocess.Options + [poWaitOnExit];
+
+    { Current directory }
+    aprocess.CurrentDirectory := GetCurrentDir;
+
+    { Run the program and free the variable. Do not forget to return the exit code! }
+    aprocess.Execute;
+    aprocess.Free;
+    Result := aprocess.ExitCode;
 end;
 
 end.

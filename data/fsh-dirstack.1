@@ -1,0 +1,35 @@
+.\" Manpage for directory stack in fsh
+.\" (C) 2024 Le Bao Nguyen.
+
+.TH man 1
+
+.SH NAME
+Directory stack in Free Pascal Shell
+
+.SH SYNOSIS
+pushd <directory>
+pushd $<index in directory stack>
+
+popd <directory>
+popd $<index in directory stack>
+
+dirstack
+
+.SH DESCRIPTION
+pushd will add a directory into FPSH's directory stack, or move existing one to the end of the list.
+
+popd will do the opposite.
+
+dirstack will print out the current stack.
+
+.SH OPTIONS
+None.
+
+.SH BUGS
+No known bugs.
+
+.SH SEE ALSO
+fsh-cd(1), fsh-codes(2)
+
+.SH AUTHOR
+Le Bao Nguyen

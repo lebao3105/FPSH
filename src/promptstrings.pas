@@ -38,20 +38,27 @@ var
 function PSOne: string;
 var bang: string;
 begin
-    if amIRoot then
-        bang := '#'
-    else
-        bang := '$';
+
+    // Current user
     Result := StringReplace(ps1_format, '%(user)s', GetEnvironmentVariable('USER'), [rfReplaceAll]);
 
+    // Current directory (name only if asked to)
     if currdir_name_only then
         Result := StringReplace(Result, '%(currdir)s', GetCurrentDir, [rfReplaceAll])
     else
         Result := StringReplace(Result, '%(currdir)s', ExtractFileName(GetCurrentDir), [rfReplaceAll]);
 
+    // Last exit code
     Result := StringReplace(Result, '%(code)s', IntToStr(Status), [rfReplaceAll]);
+
+    // Current time
     Result := StringReplace(Result, '%(time)s', FormatDateTime(time_format, Now), [rfReplaceAll]);
+
+    // That indicator, which shows you're root or not
+    if amIRoot then bang := '#' else bang := '$';
     Result := StringReplace(Result, '%(type)s', bang, [rfReplaceAll]);
+
+    // An extra space for an easier look. Should this be optional?
     Result := Result + ' ';
 end;
 

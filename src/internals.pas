@@ -19,9 +19,8 @@ unit internals;
 interface
 
 uses
-    dos, // GetDate
     strutils, sysutils,
-    utilities;
+    classes, utilities;
 
 { Internal variables, types and constants }
 
@@ -33,15 +32,9 @@ type
         Proc: function (const argv: array of String): integer;
     end;
 
-    TCommandsHistory = record
-        Commands: array [1..255] of String;
-        Current: Byte;
-    end;
-
 var
-    CommandsHistory: TCommandsHistory;
     Status: integer;
-    DirStack: array of string = ();
+    DirStack: TStringList;
     ShellCmdsAndAliases: array of string;
 
 const
@@ -125,6 +118,7 @@ begin
 
     if argc = 0 then
     begin
+        RunProgram('man', ['1', 'fsh-cd']);
         writeln('An argument is required.');
         Result := 1;
     end
@@ -141,6 +135,7 @@ begin
             WriteLn('Unable to change to ' + argv[1] + ' directory');
             Result := IOresult;
         end;
+        DirStack.Strings[0] := ExpandFileName(argv[1]);
     end;
 
 end;
@@ -156,6 +151,7 @@ begin
     Result := 0;
 
     if argc = 0 then begin
+        RunProgram('man', ['1', 'fsh-dirstack']);
         writeln('An argument is required.');
         Result := 1;
         Exit;
@@ -176,7 +172,7 @@ begin
             Exit;
         end
 
-        else if (Target < Low(DirStack)) or (Target > High(DirStack)) then
+        else if not ((DirStack.Count - 1) >= Target) and (Target >= 0) then
         begin
             WriteLn('Index out of range: ' + IntToStr(Target));
             Result := 1;
@@ -189,12 +185,11 @@ begin
 
         SwitchDir(['', Backup]);
 
-        for i := Target + 1 to High(DirStack) do
-            DirStack[i-1] := DirStack[i];
-        
-        DirStack[High(DirStack)] := Backup;
+        DirStack.Delete(Target);
+        DirStack.Add(Backup);
+
         printdebug('Is the selected directory pushed to the top of DirStack: ' +
-                   BoolToStr(IndexStr(Backup, DirStack) = High(DirStack), true));
+                   BoolToStr(DirStack.IndexOf(Backup) + 1 = DirStack.Count, true));
         
         Exit;
 
@@ -204,8 +199,7 @@ begin
         Exit;
     end;
 
-    SetLength(DirStack, Length(DirStack) + 1);
-    DirStack[High(DirStack)] := ExpandFileName(IncludeTrailingPathDelimiter(argv[1]));
+    DirStack.Add(ExpandFileName(IncludeTrailingPathDelimiter(argv[1])));
     SwitchDir(argv);
 end;
 
@@ -218,6 +212,7 @@ begin
     if strutils.StartsStr('$', argv[1]) then begin
 
         if argv[1] = '$' then begin
+            RunProgram('man', ['1', 'fsh-dirstack']);
             WriteLn('Wrong syntax used. Correct: popd $<number>.');
             Result := 1;
             Exit;
@@ -225,13 +220,15 @@ begin
 
         if not sysutils.TryStrToInt(strutils.AnsiReplaceStr(argv[1], '$', ''), Target) then
         begin
+            RunProgram('man', ['1', 'fsh-dirstack']);
             WriteLn('Unable to convert argument from string to integer ($ excluded): ', argv[1]);
             Result := 1;
             Exit;
         end
 
-        else if (Target < Low(DirStack)) or (Target > High(DirStack)) then
+        else if not ((DirStack.Count - 1) >= Target) and (Target >= 0) then
         begin
+            RunProgram('man', ['1', 'fsh-dirstack']);
             WriteLn('Index out of range: ' + IntToStr(Target));
             Result := 1;
             Exit;
@@ -245,11 +242,9 @@ begin
         Exit;
     end;
     
-    if Target = -1 then Target := IndexStr(argv[1], DirStack);
+    if Target = -1 then Target := DirStack.IndexOf(argv[1]);
 
-    SetLength(DirStack, Length(DirStack) - 1);
-
-    Delete(DirStack, Target - 1, 1); // let's try if this works
+    DirStack.Delete(Target);
 end;
 
 function Quit(const argv: array of string): integer;
@@ -261,16 +256,21 @@ begin
 end;
 
 function ShowDirStack(const argv: array of string): integer;
-var n: integer;
+var
+    n: integer;
 begin
-    for n := Low(DirStack) to High(DirStack) do
-        WriteLn(IntToStr(n) + '. ' + DirStack[n]);
+    Result := 0;
+    for n := 0 to DirStack.Count - 1 do
+        WriteLn(IntToStr(n) + '  |    ' + DirStack.Strings[n]);
 end;
 
 initialization
 
 printdebug(IntToStr(Length(ShellCommands)) + ' internal commands');
 printdebug('Initializing internals unit... Add all internal commands with their aliases to a list.');
+
+DirStack := TStringList.Create;
+DirStack.Duplicates := dupError; // we can just derive TStringList:v
 
 SetLength(ShellCmdsAndAliases, Length(ShellCommands) * 2);
 

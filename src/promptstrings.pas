@@ -67,7 +67,9 @@ begin
     Result := ps2_string + ' ';
 end;
 
+{$if defined(WINDOWS) or defined(MSWINDOWS)}
 function IsUserAnAdmin: boolean; external shell32;
+{$endif}
 
 initialization
 

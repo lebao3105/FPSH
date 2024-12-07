@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.xpm": "c",
+        "*.service": "properties",
+        "*.schema": "json"
+    }
+}

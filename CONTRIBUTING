@@ -1,0 +1,38 @@
+# Contributing to FPSH
+
+Welcome! Welcome!
+
+FPSH is in a very early state, that means it's not ready for production use yet. You know that. We all know that.
+
+That's why you're here, no?
+
+## Requirements
+
+* Know how to use Git and Git services (GitHub, GitLab, BitBucket..)
+
+* Know about Pascal. The main language here.
+
+* [Optional] Know about C/C++ (we may need it)
+
+* [Optional] Know about build system. Here we just use Make.
+
+* If you want to work on FPSH's scripting language, so learn about that too. Crafting Interpreters book will be your friend :-).
+
+* Know about GNU Readline - library used for console usage.
+
+* Want to package FPSH for other UNIX? Love it!
+
+## Project structure
+
+```
+.
+├── CONTRIBUTING # You're here
+├── data         # Additional files: Man pages, JSON schema
+├── debian       # Debian packaging files
+├── Makefile     # Used to build, install, uninstall, clean
+├── README.md    # You know it
+└── src          # Source code folder
+    ├── language # Scripting language
+    ├── readtime # GNU Readline+JSON Schema support
+    ├── And some more files here
+```

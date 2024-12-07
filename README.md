@@ -1,6 +1,6 @@
 ## The Free Pascal Shell (FPSH)
 
-This is a shell for operating systems, not an interpreter for Pascal!
+This is a shell for operating systems.
 
 ## Features
 
@@ -12,7 +12,11 @@ This has basic things of a shell:
 
 * Command history (in fact it works on some platforms without any code from me - yes from RTL!)
 
-This shell is mainly made for FPOS (Free Pascal Operating System) but also available for other OSes to use.
+Actually this shell was made for Free Pascal Operating System (FPOS), but it's also usable for other UNIXes as well.
+
+Sorry FPOS developers :( There should be a compilation flag for FPOS.
+
+Not tested on Windows yet.
 
 ## Building
 

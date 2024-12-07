@@ -13,9 +13,9 @@ program fsh;
 {$mode ObjFPC} {$H+}
 
 uses
-    custapp, strutils, internals,  {readline, }
+    custapp, strutils, internals,
     sysutils, promptstrings, process, utilities,
-    {scanner,} history;
+    history, readtime;
 
 type
     /// Main application class.
@@ -29,7 +29,10 @@ type
     private
 
         /// Process entered line (for both script and interactive mode)
-        procedure ProcessLine(const line: string);
+        procedure ProcessLine(line: string);
+
+        /// ProcessLine but for C's Char* (just cast it to string)
+        procedure ProcessLine(line: pchar); overload;
 
         /// Write out the help message
         procedure WriteHelp;
@@ -38,7 +41,7 @@ type
 procedure TFPSH.DoRun;
 
 var errorMsg: string;
-    input: string;
+    input: pchar;
     f: TextFile;
     tmp: string;
 
@@ -90,19 +93,26 @@ begin
         SetCurrentDir(GetOptionValue('w', 'where'));
     end
     else
-        DirStack.Add(GetCurrentDir);
+        DirStack.Add(GetCurrentDir); 
 
+    printdebug('Entering the main loop');
     while true do begin
-        write(PSOne());
-        readln(input);
+        input := readline(pchar(PSOne()));
         ProcessLine(input);
-        CommandsHistory.Add(input);
+        add_history(input);
     end;
 
     Terminate;
+
+    write_history(pchar('~/.fpsh_history'));
 end;
 
-procedure TFPSH.ProcessLine(const line: string);
+procedure TFPSH.ProcessLine(line: pchar);
+begin
+    ProcessLine(string(line));
+end;
+
+procedure TFPSH.ProcessLine(line: string);
 var
     i: byte;
     cmd: string;
@@ -112,7 +122,6 @@ var
 
 begin
     printdebug('Got ' + line);
-    // Scanner.TScanner.Create(line);
 
     args := strutils.SplitString(line, ' ');
     cmd := args[0];

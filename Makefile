@@ -2,7 +2,8 @@ C = fpc
 
 # -Xs = auto strip at program compile time
 # -XX = smartlinking (ignore uneccessary code)
-C_FLAGS = -Xs -XX -Fusrc/language
+C_FLAGS = -Xs -XX -Fusrc/language -Fusrc/readtime 
+C_FLAGS += -Isrc/language/include
 
 # Install prefix and destination dir
 PREFIX = /usr/local
@@ -39,8 +40,6 @@ distclean: clean
 
 install: build
 	install -D src/fsh $(DESTDIR)$(PREFIX)/bin/fsh
-# Is this recommended?
-	install -D data/fshrc ~/.fshrc
 
 uninstall:
 	$(RM) -f $(DESTDIR)$(PREFIX)/bin/fsh

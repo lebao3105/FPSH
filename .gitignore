@@ -6,6 +6,8 @@
 *.dll
 *.a
 *.dylib
+*.so
+*.out
 
 fsh*
 !src/fsh.lpr

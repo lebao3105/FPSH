@@ -14,12 +14,12 @@ unit builtins;
 
 interface
 
-uses sysutils, typinfo, variants, strutils;
+uses sysutils, typinfo, variants, strutils, fpshlang;
 
-{$include types.h.inc}
+{$include include/types.h.inc}
 
 implementation
 
-{$include types.inc}
+{$include include/types.inc}
 
 end.

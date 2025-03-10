@@ -32,6 +32,12 @@ type
         Proc: function (const argv: array of String): integer;
     end;
 
+    RFSHFlags = record
+        Short, Long: string;
+        Argument: string;
+        Description: string;
+    end;
+
 var
     Status: integer;
     DirStack: TStringList;
@@ -39,10 +45,11 @@ var
 
 const
     version: string = '0.1';
-    flagsHelp: array of array of string = (
-        ('-f [path]/ --file=[path]', 'Script to execute'),
-        ('-c [command] / --command=[command]', 'Run a (list of) command(s)'),
-        ('-h / --help', 'Show this help')
+    flagsHelp: array of RFSHFlags = (
+        (Short: 'f'; Long: 'file'; Argument: 'path'; Description: 'Script to execute'),
+        (Short: 'c'; Long: 'command'; Argument: 'commands, separated by semicolons'; Description: 'Commands to execute'),
+        (Short: 'h'; Long: 'help'; Description: 'Show this help and peacefully exit'),
+        (Short: 'w'; Long: 'where'; Argument: 'directory'; Description: 'Sets the working directory')
     );
 
 { Internal commands }
@@ -103,7 +110,16 @@ begin
             end;
     end
     else begin
-
+        writeln('Command line flags:');
+        for i := Low(flagsHelp) to High(flagsHelp) do
+            writeln(
+                ''.Format(
+                    '-%s [%s] / --%s=[%s]       : %s',
+                    [flagsHelp[i].Short, flagsHelp[i].Argument,
+                     flagsHelp[i].Long, flagsHelp[i].Argument,
+                     flagsHelp[i].Description]
+                )
+            );
     end;
     WriteLn('Set DEBUG environment variable to 1 to enable debugging messages.');
     WriteLn('Run man fsh-<command> for command help. man fsh for FSH informations.');

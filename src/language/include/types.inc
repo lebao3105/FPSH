@@ -1,3 +1,4 @@
+{$include types.arrays.inc}
 {$include types.fpsho.inc}
 {$include types.string.inc}
-{$include types.numbers.inc}
+{$include include/types.numbers.inc}

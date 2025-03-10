@@ -15,7 +15,7 @@ program fsh;
 uses
     custapp, strutils, internals,
     sysutils, promptstrings, process, utilities,
-    history, readtime;
+    history, readtime, fpshlang;
 
 type
     /// Main application class.
@@ -93,7 +93,7 @@ begin
         SetCurrentDir(GetOptionValue('w', 'where'));
     end
     else
-        DirStack.Add(GetCurrentDir); 
+        DirStack.Add(GetCurrentDir);
 
     printdebug('Entering the main loop');
     while true do begin

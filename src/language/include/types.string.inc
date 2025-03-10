@@ -18,6 +18,15 @@ begin
     raise NotSupportedError.Create('What to do? Remove all occurences or only the first one seen from the string end?');
 end;
 
+function TString.minus(right: array of integer): TString;
+var i: integer;
+begin
+    Self.Copy(Result);
+
+    for i := low(right) to high(right) do
+        Result.value.Remove(i, 1);
+end;
+
 function TString.multiply(right: TInteger): TString;
 begin
     Result := TString.Create(DupeString(value, right.value));
@@ -29,12 +38,28 @@ begin
     { TList is not implemented }
 end;
 
-function TString.contains(what: TString; caseSensitive: boolean = false): boolean;
+function TString.contains(
+    what: TString; caseSensitive: boolean = false;
+    returnIndexes: boolean = false
+): TIntArray;
+
+var splits: array of string;
+    i: integer;
 begin
     if caseSensitive then
-        Result := ContainsStr(value, what.value)
+        splits := Self.value.Split([ what.value ])
     else
-        Result := ContainsText(value, what.value);
+        splits := Self.value.ToLower().Split([ what.value ]);
+    
+    if (High(splits) = 0) then Result := TIntArray.Create([ -1 ]);
+
+    for i := 0 to High(splits) do
+    begin
+        Result.value[i] := TInteger.Create(High(splits[i]));
+
+        if (i > 0) then
+            Result.value[i] := Result.value[i] + Result.value[i - 1];
+    end;
 end;
 
 // End region

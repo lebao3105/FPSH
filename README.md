@@ -20,7 +20,7 @@ Not tested on Windows yet.
 
 ## Building
 
-Install make, git and of course fpc.
+Install make, git and of course fpc >=3.2.0 (this is a MUST).
 
 Clone this project.
 

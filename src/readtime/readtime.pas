@@ -16,7 +16,6 @@ unit readtime;
 
 {$linklib c}
 {$linklib readline}
-{$link readtime.so}
 
 interface
 

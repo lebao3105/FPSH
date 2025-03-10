@@ -45,17 +45,39 @@ type
         procedure copy(destination: TFPSHObject); overload;
     end;
 
+	{ Arrays. }
+	generic TFPArray<T> = class(TObject)
+	private
+		type TArr = array of T;
+
+	protected
+		function valueToString: string;
+	
+	public
+		value: TArr;
+
+		constructor Create(arr: TArr);
+		function Count: Integer;
+	end;
+
+	{ Forward declarations }
+	TInteger = class;
+	TString = class;
+
+	_TIntArray = specialize TFPArray<TInteger>;
+	TIntArray = class(_TIntArray);
+
+	_TStringArray = specialize TFPArray<TString>;
+	TStringArray = class(_TStringArray);
+
     { Integer }
     _TInteger = specialize TFPSHObject<integer>;
     TInteger = class(_TInteger)
 	protected
-
-        { Converts value to string. }
         function valueToString: string;
 
     public
         constructor Create(str: string); overload;
-
     end;
 
     { Character. }
@@ -84,7 +106,8 @@ type
     public
 
 		function plus(right: TCharacter): TString;
-        function minus(right: TString): TString;
+        function minus(right: TString): TString; overload;
+		function minus(right: array of integer): TString; overload;
         function multiply(right: TInteger): TString;
         function divide(right: TString): TString;
 
@@ -96,6 +119,11 @@ type
         function fromIndex(what: TInteger): TCharacter;
 		function count: TInteger;
 
-		function contains(what: TString; caseSensitive: boolean = false): boolean;
+		// operator[] as well.
+		function contains(
+			what: TString; caseSensitive: boolean = false;
+			returnIndexes: boolean = false
+		): TIntArray;
+
 		function startsWith(what: TString; caseSensitive: boolean = false): boolean;
     end;
